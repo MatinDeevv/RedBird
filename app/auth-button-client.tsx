@@ -22,7 +22,7 @@ export default function AuthButtonClient({
     await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${location.origin}/auth/callback`,
+        redirectTo: `https://fdnotejigaqdjcjjurct.supabase.co/auth/v1/callback`,
       },
     });
   };
