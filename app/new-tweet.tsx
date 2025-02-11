@@ -5,42 +5,41 @@ import { cookies } from "next/headers";
 import Image from "next/image";
 import type { User } from "@supabase/auth-helpers-nextjs";
 
-// If you have a Database type defined, import it. Otherwise, use `any` temporarily.
+// If you have a proper Database type, replace 'any' with your type.
 type Database = any;
 
 export const dynamic = "force-dynamic";
 
 export default function NewTweet({ user }: { user: User }) {
-  // This function will be executed on the server when the form is submitted.
+  // This server action will be executed when the form is submitted.
   const addTweet = async (formData: FormData) => {
     "use server";
-
     try {
-      // Retrieve the title value from the form data.
+      // Retrieve the title from the form data.
       const title = String(formData.get("title"));
-      if (!title) {
-        throw new Error("Title is required");
+      if (!title || title.trim() === "") {
+        throw new Error("Tweet content cannot be empty.");
       }
 
-      // Create a Supabase client instance for server actions.
+      // Create a Supabase client for server actions.
       const supabase = createServerActionClient<Database>({ cookies });
 
-      // Insert a new tweet into the "tweets" table.
+      // Attempt to insert the new tweet.
       const { error } = await supabase
         .from("tweets")
         .insert({ title, user_id: user.id });
 
       if (error) {
         console.error("Error inserting tweet:", error);
-        throw new Error("Error inserting tweet");
+        throw new Error("Error inserting tweet.");
       }
 
-      // Optionally, you could return a success message or perform additional actions.
-      console.log("Tweet successfully inserted!");
-    } catch (err) {
-      console.error("Error in addTweet:", err);
-      // You can rethrow the error if you need it to propagate or handle it gracefully.
-      throw err;
+      console.log("Tweet inserted successfully!");
+      // Optionally: You can return a value or trigger a revalidation if needed.
+    } catch (error) {
+      console.error("Error in addTweet:", error);
+      // Rethrow error so that Next.js knows the action failed.
+      throw error;
     }
   };
 
