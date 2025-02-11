@@ -74,4 +74,3 @@ export default function NewTweet({ user }: { user: User }) {
     </form>
   );
 }
-s
