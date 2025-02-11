@@ -1,62 +1,68 @@
 // NewTweet.tsx
-
 import { createServerActionClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import Image from "next/image";
 import type { User } from "@supabase/auth-helpers-nextjs";
 
-// If you have a proper Database type, replace 'any' with your type.
+// If you have a proper Database type, replace `any` with your type.
 type Database = any;
 
 export const dynamic = "force-dynamic";
 
 export default function NewTweet({ user }: { user: User }) {
-  // This server action will be executed when the form is submitted.
+  // This function will be executed on the server when the form is submitted.
   const addTweet = async (formData: FormData) => {
     "use server";
     try {
-      // Retrieve the title from the form data.
+      // Extract and validate the tweet content.
       const title = String(formData.get("title"));
       if (!title || title.trim() === "") {
         throw new Error("Tweet content cannot be empty.");
       }
 
-      // Create a Supabase client for server actions.
+      // Ensure the user is authenticated.
+      if (!user?.id) {
+        throw new Error("User is not authenticated.");
+      }
+
+      // Create the Supabase client using server-side cookies.
       const supabase = createServerActionClient<Database>({ cookies });
 
-      // Attempt to insert the new tweet.
+      // Insert the tweet into the "tweets" table.
       const { error } = await supabase
         .from("tweets")
         .insert({ title, user_id: user.id });
 
       if (error) {
-        console.error("Error inserting tweet:", error);
-        throw new Error("Error inserting tweet.");
+        console.error("Supabase insertion error:", error);
+        throw new Error("Failed to insert tweet.");
       }
 
-      console.log("Tweet inserted successfully!");
-      // Optionally: You can return a value or trigger a revalidation if needed.
-    } catch (error) {
-      console.error("Error in addTweet:", error);
-      // Rethrow error so that Next.js knows the action failed.
-      throw error;
+      console.log("Tweet successfully inserted!");
+      // Optionally, you can return a value or trigger a revalidation.
+    } catch (err) {
+      console.error("Error in addTweet:", err);
+      // Rethrow the error to let Next.js know the action failed.
+      throw err;
     }
   };
 
   return (
-    <form
-      className="border border-t-0 border-gray-800"
-      action={addTweet}
-    >
+    <form action={addTweet} className="border border-t-0 border-gray-800">
       <div className="flex items-center px-4 py-8">
         <div className="w-12 h-12">
-          <Image
-            src={user.user_metadata.avatar_url}
-            alt="user avatar"
-            width={48}
-            height={48}
-            className="rounded-full"
-          />
+          {user?.user_metadata?.avatar_url ? (
+            <Image
+              src={user.user_metadata.avatar_url}
+              alt="user avatar"
+              width={48}
+              height={48}
+              className="rounded-full"
+            />
+          ) : (
+            // Fallback if no avatar is provided.
+            <div className="w-12 h-12 bg-gray-300 rounded-full" />
+          )}
         </div>
         <input
           name="title"
